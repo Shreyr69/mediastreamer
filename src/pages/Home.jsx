@@ -1,14 +1,19 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import VideoCard from '../components/VideoCard'
 import ShimmerCard from '../components/ShimmerCard'
+import Pagination from '../components/Pagination'
 
 export default function Home() {
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeCategory, setActiveCategory] = useState('All');
-
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageTokensRef = useRef({});
+  
   const categories = ['All', 'Music', 'Gaming', 'News', 'Live', 'Sports', 'Learning'];
+  const VIDEOS_PER_PAGE = 24;
+  const TOTAL_PAGES = 5; 
 
   useEffect(() => {
     async function fetchVideos() {
@@ -19,8 +24,11 @@ export default function Home() {
         const API_KEY = import.meta.env.VITE_VIDEO_API_KEY;
         const searchQuery = activeCategory === 'All' ? 'trending' : activeCategory;
         
+        const pageToken = pageTokensRef.current[currentPage] || '';
+        const pageTokenParam = pageToken ? `&pageToken=${pageToken}` : '';
+        
         const response = await fetch(
-          `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=24&q=${searchQuery}&type=video&key=${API_KEY}`
+          `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=${VIDEOS_PER_PAGE}&q=${searchQuery}&type=video&key=${API_KEY}${pageTokenParam}`
         );
 
         if (!response.ok) {
@@ -29,6 +37,14 @@ export default function Home() {
 
         const data = await response.json();
         setVideos(data.items || []);
+        
+        // Store the next page token for future use
+        if (data.nextPageToken) {
+          pageTokensRef.current = {
+            ...pageTokensRef.current,
+            [currentPage + 1]: data.nextPageToken
+          };
+        }
       } catch (err) {
         setError(err.message);
         console.error('Error fetching videos:', err);
@@ -38,7 +54,18 @@ export default function Home() {
     }
     
     fetchVideos();
-  }, [activeCategory]);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [activeCategory, currentPage]);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const handleCategoryChange = (category) => {
+    setActiveCategory(category);
+    setCurrentPage(1); 
+    pageTokensRef.current = {}; 
+  };
 
   return (
     <div className="text-black dark:text-white">
@@ -47,7 +74,7 @@ export default function Home() {
         {categories.map((category) => (
           <button
             key={category}
-            onClick={() => setActiveCategory(category)}
+            onClick={() => handleCategoryChange(category)}
             className={`px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-colors ${
               activeCategory === category
                 ? 'bg-gray-900 dark:bg-white text-white dark:text-black'
@@ -84,11 +111,20 @@ export default function Home() {
 
       {/* Videos Grid */}
       {!loading && !error && videos.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-8">
-          {videos.map((video) => (
-            <VideoCard key={video.id.videoId || video.id} video={video} />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-8">
+            {videos.map((video) => (
+              <VideoCard key={video.id.videoId || video.id} video={video} />
+            ))}
+          </div>
+          
+          {/* Pagination */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={TOTAL_PAGES}
+            onPageChange={handlePageChange}
+          />
+        </>
       )}
 
       {/* No Videos State */}

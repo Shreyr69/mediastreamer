@@ -16,7 +16,6 @@ export default function Watch() {
       try {
         const API_KEY = import.meta.env.VITE_VIDEO_API_KEY;
         
-        // Fetch video details
         const videoResponse = await fetch(
           `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${id}&key=${API_KEY}`
         );
@@ -25,7 +24,6 @@ export default function Watch() {
         if (videoData.items && videoData.items.length > 0) {
           setVideoDetails(videoData.items[0]);
           
-          // Fetch recommended videos based on the current video's tags or title
           const searchQuery = videoData.items[0].snippet.title.split(' ').slice(0, 3).join(' ');
           const recommendedResponse = await fetch(
             `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=15&q=${searchQuery}&type=video&key=${API_KEY}`
