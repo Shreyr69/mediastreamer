@@ -22,9 +22,16 @@ export default function Watch() {
         const videoData = await videoResponse.json();
         
         if (videoData.items && videoData.items.length > 0) {
-          setVideoDetails(videoData.items[0]);
+          const video = videoData.items[0];
+          setVideoDetails(video);
           
-          const searchQuery = videoData.items[0].snippet.title.split(' ').slice(0, 3).join(' ');
+          // Save to watch history
+          saveToWatchHistory({
+            id: { videoId: id },
+            snippet: video.snippet
+          });
+          
+          const searchQuery = video.snippet.title.split(' ').slice(0, 3).join(' ');
           const recommendedResponse = await fetch(
             `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=15&q=${searchQuery}&type=video&key=${API_KEY}`
           );
@@ -41,6 +48,23 @@ export default function Watch() {
     fetchVideoDetails();
     window.scrollTo(0, 0);
   }, [id]);
+
+  const saveToWatchHistory = (video) => {
+    // Get existing history
+    const history = localStorage.getItem('watchHistory');
+    let watchHistory = history ? JSON.parse(history) : [];
+    
+    // Remove duplicate if exists
+    watchHistory = watchHistory.filter(item => 
+      (item.id.videoId || item.id) !== (video.id.videoId || video.id)
+    );
+    
+    // Add to beginning and limit to 50 videos
+    watchHistory = [video, ...watchHistory].slice(0, 50);
+    
+    // Save to localStorage
+    localStorage.setItem('watchHistory', JSON.stringify(watchHistory));
+  };
 
   if (!id) {
     return (

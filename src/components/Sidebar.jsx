@@ -1,7 +1,7 @@
 import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { AiFillHome } from 'react-icons/ai'
-import { MdOndemandVideo, MdUpload } from 'react-icons/md'
+import { MdOndemandVideo, MdUpload, MdHistory } from 'react-icons/md'
 import { FaUser } from 'react-icons/fa'
 
 export default function Sidebar({ isOpen }) {
@@ -10,6 +10,7 @@ export default function Sidebar({ isOpen }) {
   const menuItems = [
     { path: '/', icon: AiFillHome, label: 'Home' },
     { path: '/watch', icon: MdOndemandVideo, label: 'Watch' },
+    { path: '/history', icon: MdHistory, label: 'History' },
     { path: '/upload', icon: MdUpload, label: 'Upload' },
     { path: '/profile', icon: FaUser, label: 'Profile' },
   ];
